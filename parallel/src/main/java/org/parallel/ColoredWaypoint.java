@@ -2,7 +2,6 @@ package org.parallel;
 
 import org.jxmapviewer.viewer.GeoPosition;
 import org.jxmapviewer.viewer.Waypoint;
-
 import java.awt.*;
 
 public class ColoredWaypoint implements Waypoint {
@@ -29,7 +28,4 @@ public class ColoredWaypoint implements Waypoint {
         return color;
     }
 
-    public boolean isCenter() {
-        return isCenter;
-    }
 }

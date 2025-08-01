@@ -84,8 +84,6 @@ public class Map {
 
             int size = 15; //cluster size
             g2d.setColor(Color.WHITE);
-            //int outlineSize = size + 4; // Add an outline for better visibility
-            //g2d.fillOval((int) point.getX() - outlineSize / 2, (int) point.getY() - outlineSize / 2, outlineSize, outlineSize); - for outline of the cluster
 
             //draw the cluster center
             g2d.setColor(wp.getColor());
