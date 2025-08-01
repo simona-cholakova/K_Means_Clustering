@@ -22,7 +22,6 @@ public class Cluster {
         return centerLon;
     }
 
-    //update the cluster center by recalculating the average position
     public Coordinate updateCenter() {
         if (records.isEmpty()) {
             return null; //skip if no records are assigned to the cluster

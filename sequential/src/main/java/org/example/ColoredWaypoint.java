@@ -29,7 +29,4 @@ public class ColoredWaypoint implements Waypoint {
         return color;
     }
 
-    /*public boolean isCenter() {
-        return isCenter;
-    }*/
 }
