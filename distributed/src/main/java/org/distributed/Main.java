@@ -14,8 +14,58 @@ public class Main {
         int rank = MPI.COMM_WORLD.Rank();
         final int MASTER = 0;
 
-//        int k = 100;
-//        int accumulationSites = 19000;
+        int mapWidth = 800;  // default width
+        int mapHeight = 600; // default height
+
+        if (rank == MASTER) {
+            int option = JOptionPane.showOptionDialog(
+                    null,
+                    "Do you want the map to be the default size or set it manually?",
+                    "Map Size Preference",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new Object[]{"Default Size", "Set Manually"},
+                    "Default Size"
+            );
+
+            if (option == 1) { // Set Manually
+                boolean validSize = false;
+                while (!validSize) {
+                    try {
+                        String widthInput = JOptionPane.showInputDialog(null, "Enter map width (pixels):", "Input", JOptionPane.QUESTION_MESSAGE);
+                        if (widthInput == null) throw new IllegalArgumentException("Cancelled");
+                        mapWidth = Integer.parseInt(widthInput);
+                        if (mapWidth <= 0) throw new IllegalArgumentException("Width must be positive.");
+
+                        String heightInput = JOptionPane.showInputDialog(null, "Enter map height (pixels):", "Input", JOptionPane.QUESTION_MESSAGE);
+                        if (heightInput == null) throw new IllegalArgumentException("Cancelled");
+                        mapHeight = Integer.parseInt(heightInput);
+                        if (mapHeight <= 0) throw new IllegalArgumentException("Height must be positive.");
+
+                        validSize = true;
+                    } catch (NumberFormatException e) {
+                        JOptionPane.showMessageDialog(null, "Please enter valid integer numbers.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                    } catch (IllegalArgumentException e) {
+                        JOptionPane.showMessageDialog(null, e.getMessage(), "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            } else if (option == JOptionPane.CLOSED_OPTION) {
+                System.out.println("No selection made for map size. Using default.");
+            }
+        }
+
+        //broadcast map width and height
+        int[] sizeArr = new int[2];
+        if (rank == MASTER) {
+            sizeArr[0] = mapWidth;
+            sizeArr[1] = mapHeight;
+        }
+        MPI.COMM_WORLD.Bcast(sizeArr, 0, 2, MPI.INT, MASTER);
+        mapWidth = sizeArr[0];
+        mapHeight = sizeArr[1];
+
+        System.out.println("Rank " + rank + " received map size: width=" + mapWidth + ", height=" + mapHeight);
 
         int k = 0;
         int accumulationSites = 0;
@@ -117,6 +167,7 @@ public class Main {
                     c.getCenterLat(), c.getCenterLon(), c.getRecords().size()));
 
             JFrame mapFrame = Map.createMapFrame(clusters);
+            mapFrame.setSize(mapWidth, mapHeight);
             mapFrame.setVisible(true);
         }
 
