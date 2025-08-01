@@ -29,8 +29,5 @@ public class Record extends FileReading implements Serializable {
     public Double getLo() {
         return lo;
     }
-    /*@Override
-    public String toString() {
-        return "Station{name='" + name + "', capacity=" + capacity + ", la='" + la + "', lo='" + lo + "'}";
-    }*/
+
 }

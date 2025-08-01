@@ -14,16 +14,54 @@ public class Main {
         int rank = MPI.COMM_WORLD.Rank();
         final int MASTER = 0;
 
-        // Hardcoded values
-        int k = 10;
-        int accumulationSites = 100;
+//        int k = 100;
+//        int accumulationSites = 19000;
+
+        int k = 0;
+        int accumulationSites = 0;
+
+        if (rank == MASTER) {
+            boolean validInput = false;
+
+            while (!validInput) {
+                try {
+                    String kInput = JOptionPane.showInputDialog(null, "Enter number of clusters (k):", "Input", JOptionPane.QUESTION_MESSAGE);
+                    if (kInput == null) throw new IllegalArgumentException("Cancelled");
+
+                    k = Integer.parseInt(kInput);
+                    if (k <= 0) throw new IllegalArgumentException("k must be a positive integer.");
+
+                    String sitesInput = JOptionPane.showInputDialog(null, "Enter number of accumulation sites:", "Input", JOptionPane.QUESTION_MESSAGE);
+                    if (sitesInput == null) throw new IllegalArgumentException("Cancelled");
+
+                    accumulationSites = Integer.parseInt(sitesInput);
+                    if (accumulationSites <= 0) throw new IllegalArgumentException("Accumulation sites must be a positive integer.");
+
+                    if (k > accumulationSites) {
+                        throw new IllegalArgumentException("Number of clusters (k) cannot be greater than accumulation sites.");
+                    }
+
+                    validInput = true; // all validations passed
+
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(null, "Please enter valid integers.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                } catch (IllegalArgumentException e) {
+                    JOptionPane.showMessageDialog(null, e.getMessage(), "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+            System.out.println("Using k = " + k + ", accumulationSites = " + accumulationSites);
+        }
 
         List<Record> allRecords = null;
 
         if (rank == MASTER) {
             System.out.println("Using hardcoded k = " + k + ", accumulationSites = " + accumulationSites);
 
-            allRecords = FileReading.loadRecords("C:/Users/PC/Desktop/K Means Clustering/parallel - Copy (2)/src/main/java/germany/germany.json");
+            allRecords = FileReading.loadRecords("src/main/java/germany/germany.json");
+            //"src/main/java/germany/germany.json" - path from content root
+            //"C:/Users/PC/Desktop/K_Means_Clustering/distributed/src/main/java/germany/germany.json" - absolute path
+
             if (accumulationSites > allRecords.size()) {
                 int extra = accumulationSites - allRecords.size();
                 List<Region> regions = RegionData.getLandRegions();
@@ -38,7 +76,7 @@ public class Main {
             allRecords = new ArrayList<>(allRecords.subList(0, accumulationSites));
         }
 
-        // Broadcast k
+        //broadcast k
         int[] kArr = new int[1];
         if (rank == MASTER) {
             kArr[0] = k;
@@ -47,7 +85,7 @@ public class Main {
         k = kArr[0];
         System.out.println("Rank " + rank + " received k = " + k);
 
-        // Serialize allRecords to byte array on master
+        //serialize allRecords to byte array on master
         byte[] serializedRecords = null;
         int[] serializedLength = new int[1];
         if (rank == MASTER) {
@@ -55,16 +93,16 @@ public class Main {
             serializedLength[0] = serializedRecords.length;
         }
 
-        // Broadcast length of serializedRecords
+        //broadcast length of serializedRecords
         MPI.COMM_WORLD.Bcast(serializedLength, 0, 1, MPI.INT, MASTER);
         if (rank != MASTER) {
             serializedRecords = new byte[serializedLength[0]];
         }
 
-        // Broadcast serializedRecords bytes
+        //broadcast serializedRecords bytes
         MPI.COMM_WORLD.Bcast(serializedRecords, 0, serializedLength[0], MPI.BYTE, MASTER);
 
-        // Deserialize on non-master
+        //deserialize on non-master
         if (rank != MASTER) {
             allRecords = deserializeRecords(serializedRecords);
         }
@@ -85,7 +123,7 @@ public class Main {
         MPI.Finalize();
     }
 
-    // Serialization helper
+    //serialization function
     private static byte[] serializeRecords(List<Record> records) throws IOException {
         List<Record> safeList = new ArrayList<>(records);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -95,7 +133,7 @@ public class Main {
         return bos.toByteArray();
     }
 
-    // Deserialization helper
+    //deserialization function
     @SuppressWarnings("unchecked")
     private static List<Record> deserializeRecords(byte[] data) throws IOException, ClassNotFoundException {
         ByteArrayInputStream bis = new ByteArrayInputStream(data);

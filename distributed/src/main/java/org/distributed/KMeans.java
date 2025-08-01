@@ -10,7 +10,7 @@ public class KMeans {
     private final int rank;
     private final int size;
     private final int k;
-    private final List<Record> allRecords; // only set on rank 0
+    private final List<Record> allRecords; //only set on rank 0
     private List<Cluster> finalClusters;
 
     public KMeans(int k, List<Record> allRecords) {
@@ -23,11 +23,11 @@ public class KMeans {
     public void runClustering() throws Exception {
         int MASTER = 0;
 
-        // Broadcast k again (optional, but safe)
+        //broadcast k again
         int[] kArr = new int[]{k};
         MPI.COMM_WORLD.Bcast(kArr, 0, 1, MPI.INT, MASTER);
 
-        // Broadcast total number of records
+        //broadcast total number of records
         int totalRecords = allRecords != null ? allRecords.size() : 0;
         int[] recordCount = new int[]{totalRecords};
         MPI.COMM_WORLD.Bcast(recordCount, 0, 1, MPI.INT, MASTER);
@@ -37,22 +37,22 @@ public class KMeans {
         List<Record> localRecords;
 
         if (rank == MASTER) {
-            System.out.println("Master distributing data chunks...");
+            System.out.println("Master is distributing the data chunks for each process...");
             for (int i = 1; i < size; i++) {
                 int start = i * chunkSize;
                 int end = Math.min((i + 1) * chunkSize, totalRecords);
                 List<Record> sub = new ArrayList<>(allRecords.subList(start, end));
                 byte[] bytes = serializeRecords(sub);
-                // Send length first
+                //send length first
                 int[] lenArr = new int[]{bytes.length};
                 MPI.COMM_WORLD.Send(lenArr, 0, 1, MPI.INT, i, 0);
-                // Send serialized bytes
+                //send serialized bytes
                 MPI.COMM_WORLD.Send(bytes, 0, bytes.length, MPI.BYTE, i, 1);
             }
-            // Master local chunk
+            //master local chunk
             localRecords = new ArrayList<>(allRecords.subList(0, Math.min(chunkSize, totalRecords)));
         } else {
-            // Receive length
+            //receive length
             int[] lenArr = new int[1];
             MPI.COMM_WORLD.Recv(lenArr, 0, 1, MPI.INT, MASTER, 0);
             int length = lenArr[0];
@@ -62,7 +62,7 @@ public class KMeans {
         }
         System.out.println("Rank " + rank + " received localRecords size = " + localRecords.size());
 
-        // Initialize clusters on master
+        //initialize clusters on master
         List<Cluster> clusters = new ArrayList<>();
         ClusterCenter[] centers = new ClusterCenter[k];
         if (rank == MASTER) {
@@ -73,12 +73,12 @@ public class KMeans {
             }
         }
 
-        // Broadcast initial centers
+        //broadcast initial centers
         centers = broadcastCenters(centers, k, MASTER);
 
         boolean changed;
         do {
-            // Assign records to nearest cluster
+            //assign records to nearest cluster
             PartialResult localResult = new PartialResult(k);
             EuclideanDistance distance = new EuclideanDistance();
 
@@ -95,25 +95,25 @@ public class KMeans {
                 localResult.add(nearest, rec.getLa(), rec.getLo(), rec);
             }
 
-            // Gather PartialResult objects to master
+            //gather PartialResult objects to master
             PartialResult[] allResults = null;
             if (rank == MASTER) {
                 allResults = new PartialResult[size];
             }
 
-            // Serialize localResult
+            //serialize localResult
             byte[] serializedLocalResult = serializePartialResult(localResult);
 
-            // First send length of serialized data to master
+            //first send length of serialized data to master
             int[] lenArr = new int[]{serializedLocalResult.length};
 //            MPI.COMM_WORLD.Gather(lenArr, 0, 1, MPI.INT, null, 0, 0, MPI.INT, MASTER);
 
-            // Now gather serialized bytes — tricky because size varies per rank
-            // So we gather lengths first, then master receives each buffer individually
+            //gather serialized bytes — tricky because size varies per rank
+            //gather lengths first, then master receives each buffer individually
 
             if (rank == MASTER) {
                 allResults = new PartialResult[size];
-                // Receive all serialized PartialResults from other ranks
+                //receive all serialized PartialResults from other ranks
                 for (int i = 0; i < size; i++) {
                     int length;
                     if (i == MASTER) {
@@ -132,9 +132,9 @@ public class KMeans {
                     allResults[i] = deserializePartialResult(buffer);
                 }
             } else {
-                // Send length to master
+                //send length to master
                 MPI.COMM_WORLD.Send(lenArr, 0, 1, MPI.INT, MASTER, 100 + rank);
-                // Send serialized bytes to master
+                //send serialized bytes to master
                 MPI.COMM_WORLD.Send(serializedLocalResult, 0, serializedLocalResult.length, MPI.BYTE, MASTER, 200 + rank);
             }
 
@@ -171,12 +171,12 @@ public class KMeans {
                 System.out.println("Iteration completed. Centers updated. Changed = " + changed);
             }
 
-            // Broadcast changed flag
+            //broadcast the changed flag
             boolean[] changedArr = new boolean[]{changed};
             MPI.COMM_WORLD.Bcast(changedArr, 0, 1, MPI.BOOLEAN, MASTER);
             changed = changedArr[0];
 
-            // Broadcast new centers
+            //broadcast the new centers
             centers = broadcastCenters(centers, k, MASTER);
 
         } while (changed);
@@ -224,7 +224,6 @@ public class KMeans {
         return bos.toByteArray();
     }
 
-    @SuppressWarnings("unchecked")
     private static List<Record> deserializeRecords(byte[] data) throws IOException, ClassNotFoundException {
         ByteArrayInputStream bis = new ByteArrayInputStream(data);
         ObjectInputStream ois = new ObjectInputStream(bis);
