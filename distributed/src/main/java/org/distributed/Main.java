@@ -36,7 +36,7 @@ public class Main {
             panel.add(new JLabel("Number of Accumulation Sites:"));
             panel.add(accField);
 
-            int result = JOptionPane.showConfirmDialog(null, panel, "Enter Parameters",
+            int result = JOptionPane.showConfirmDialog(null, panel, "Distributed Version",
                     JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
             if (result != JOptionPane.OK_OPTION) {
@@ -56,15 +56,19 @@ public class Main {
                 }
 
                 if (k > accumulationSites) {
-                    throw new IllegalArgumentException("Number of clusters (k) cannot be greater than accumulation sites.");
+                    JOptionPane.showMessageDialog(null,
+                            "Please enter a number of clusters (k) that is less than or equal to the number of accumulation sites.",
+                            "Invalid Input",
+                            JOptionPane.WARNING_MESSAGE);
+                    MPI.Finalize();
+                    return;
                 }
 
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Please enter valid positive integers.");
-                MPI.Finalize();
-                return;
-            } catch (IllegalArgumentException e) {
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null,
+                        "Please enter valid positive integers.",
+                        "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
                 MPI.Finalize();
                 return;
             }
@@ -73,7 +77,7 @@ public class Main {
             System.out.println("Using k = " + k + ", accumulationSites = " + accumulationSites);
         }
 
-        // Broadcast map width and height
+        // Broadcast map size
         int[] sizeArr = new int[2];
         if (rank == MASTER) {
             sizeArr[0] = mapWidth;
@@ -97,7 +101,7 @@ public class Main {
         List<Record> allRecords = null;
 
         if (rank == MASTER) {
-            allRecords = FileReading.loadRecords("src/main/java/germany/germany.json");
+            allRecords = FileReading.loadRecords("distributed/src/main/java/germany/germany.json");
 
             if (accumulationSites > allRecords.size()) {
                 int extra = accumulationSites - allRecords.size();

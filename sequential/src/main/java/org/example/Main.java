@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
         SwingUtilities.invokeLater(() -> {
-            //panel to gather all input at once
+            // panel to gather all input at once
             JPanel panel = new JPanel(new GridLayout(0, 2));
 
             int width = 800;
@@ -29,7 +29,7 @@ public class Main {
             panel.add(new JLabel("Number of Accumulation Sites:"));
             panel.add(accumulationField);
 
-            int result = JOptionPane.showConfirmDialog(null, panel, "Enter Map and Clustering Parameters",
+            int result = JOptionPane.showConfirmDialog(null, panel, "Sequential Version",
                     JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
             if (result != JOptionPane.OK_OPTION) {
@@ -47,12 +47,20 @@ public class Main {
                     throw new NumberFormatException();
                 }
 
-                //summary in terminal
+                if (k > accumulationSites) {
+                    JOptionPane.showMessageDialog(null,
+                            "Please enter a number of clusters (k) that is less than or equal to the number of accumulation sites.",
+                            "Invalid Input",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // summary in terminal
                 System.out.println("Map Size: " + width + "x" + height);
                 System.out.println("Number of Clusters (k): " + k);
                 System.out.println("Number of Accumulation Sites: " + accumulationSites);
 
-                List<Record> records = FileReading.loadRecords("src/main/java/germany/germany.json");
+                List<Record> records = FileReading.loadRecords("sequential/src/main/java/germany/germany.json");
 
                 if (records.isEmpty()) {
                     System.out.println("No records found. Exiting.");

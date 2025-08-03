@@ -7,9 +7,11 @@ import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
+        System.out.println("Parallel started");
         long start = System.currentTimeMillis();
+
         SwingUtilities.invokeLater(() -> {
-            //panel for all inputs
+            // Panel for all inputs
             JPanel panel = new JPanel(new GridLayout(0, 2));
 
             int defaultWidth = 800;
@@ -29,7 +31,7 @@ public class Main {
             panel.add(new JLabel("Number of Accumulation Sites:"));
             panel.add(accumulationField);
 
-            int result = JOptionPane.showConfirmDialog(null, panel, "Enter Parameters",
+            int result = JOptionPane.showConfirmDialog(null, panel, "Parallel Version",
                     JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
             if (result != JOptionPane.OK_OPTION) {
@@ -47,17 +49,28 @@ public class Main {
                 if (width <= 0 || height <= 0 || k <= 0 || accumulationSites <= 0) {
                     throw new NumberFormatException();
                 }
+
+                if (k > accumulationSites) {
+                    JOptionPane.showMessageDialog(null,
+                            "Please enter a number of clusters (k) that is less than or equal to the number of accumulation sites.",
+                            "Invalid Input",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Invalid input. All values must be positive integers.");
+                JOptionPane.showMessageDialog(null,
+                        "Invalid input. All values must be positive integers.",
+                        "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            //summary in terminal
+            // Summary in terminal
             System.out.println("Map Size: " + width + "x" + height);
             System.out.println("Number of Clusters (k): " + k);
             System.out.println("Number of Accumulation Sites: " + accumulationSites);
 
-            List<Record> records = FileReading.loadRecords("src/main/java/germany/germany.json");
+            List<Record> records = FileReading.loadRecords("parallel/src/main/java/germany/germany.json");
 
             if (records.isEmpty()) {
                 System.out.println("No records found. Exiting.");
